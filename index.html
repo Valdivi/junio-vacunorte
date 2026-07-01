@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe de Campañas — Vacunorte Mayo 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root {
+    --blue:#1a56a0;--blue-light:#e8f0fb;--blue-mid:#3575c7;
+    --teal:#0f8c6e;--teal-light:#e0f5ef;
+    --coral:#d94f2b;--coral-light:#fdf0ec;
+    --amber:#c47a12;--amber-light:#fdf3e0;
+    --ink:#0f1923;--ink2:#3a4a58;--ink3:#6b7c8d;
+    --line:#dde4ec;--bg:#f5f7fa;--white:#ffffff;
+    --radius:12px;--shadow:0 2px 16px rgba(15,25,35,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.6;}
+  .page{display:none;min-height:100vh;}
+  .page.active{display:block;}
+
+  /* COVER */
+  .cover{background:var(--ink);min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:3rem 2rem;position:relative;overflow:hidden;}
+  .cover::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(26,86,160,.35) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(15,140,110,.2) 0%,transparent 50%);}
+  .cover-logo{font-family:'DM Serif Display',serif;font-size:13px;letter-spacing:.25em;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:3rem;position:relative;}
+  .cover-logo span{color:var(--blue-mid);}
+  .cover h1{font-family:'DM Serif Display',serif;font-size:clamp(2.4rem,6vw,4.2rem);color:white;line-height:1.1;position:relative;margin-bottom:1rem;}
+  .cover h1 em{color:#6ab0f5;font-style:italic;}
+  .cover-sub{font-size:16px;color:rgba(255,255,255,.55);position:relative;margin-bottom:3rem;}
+  .cover-pills{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;position:relative;margin-bottom:3.5rem;}
+  .pill{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.75);border-radius:999px;padding:6px 16px;font-size:13px;}
+  .btn-start{background:var(--blue-mid);color:white;border:none;padding:14px 36px;border-radius:999px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;position:relative;transition:background .2s,transform .15s;}
+  .btn-start:hover{background:#2a62b0;transform:translateY(-1px);}
+  .cover-prepared{position:absolute;bottom:2rem;font-size:12px;color:rgba(255,255,255,.3);}
+
+  /* LAYOUT */
+  .page-inner{max-width:900px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+  .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;padding-bottom:1.25rem;border-bottom:1px solid var(--line);}
+  .page-header h2{font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--ink);font-weight:400;}
+  .btn-back{display:flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--line);color:var(--ink3);padding:7px 16px;border-radius:999px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:border-color .2s,color .2s;}
+  .btn-back:hover{border-color:var(--blue-mid);color:var(--blue-mid);}
+  .card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.5rem;margin-bottom:1.25rem;}
+  .card-title{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:1rem;}
+  .metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:1.25rem;}
+  .metric{background:var(--bg);border-radius:10px;padding:1rem 1rem .85rem;}
+  .metric-label{font-size:12px;color:var(--ink3);margin-bottom:4px;}
+  .metric-value{font-size:1.6rem;font-weight:600;color:var(--ink);line-height:1;}
+  .metric-sub{font-size:11px;color:var(--ink3);margin-top:3px;}
+  .metric.blue{background:var(--blue-light);} .metric.blue .metric-value{color:var(--blue);}
+  .metric.teal{background:var(--teal-light);} .metric.teal .metric-value{color:var(--teal);}
+  .metric.amber{background:var(--amber-light);} .metric.amber .metric-value{color:var(--amber);}
+  .chart-wrap{position:relative;width:100%;}
+  .section-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin:1.75rem 0 .75rem;}
+
+  /* CAMPAIGN ROWS */
+  .camp-row{display:flex;align-items:center;gap:14px;padding:1rem 1.25rem;border-radius:10px;cursor:pointer;border:1.5px solid transparent;transition:border-color .2s,background .2s,transform .15s;margin-bottom:.6rem;background:var(--bg);}
+  .camp-row:hover{border-color:var(--blue-mid);background:var(--blue-light);transform:translateX(3px);}
+  .camp-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+  .camp-name{font-weight:500;font-size:14px;flex:1;}
+  .camp-meta{font-size:12px;color:var(--ink3);}
+  .camp-bar-wrap{width:100px;}
+  .camp-bar{height:6px;border-radius:3px;}
+
+  /* ALERTS */
+  .alert{border-radius:10px;padding:1rem 1.2rem;margin:.75rem 0;border-left:3px solid;}
+  .alert-ok{background:var(--teal-light);border-color:var(--teal);}
+  .alert-warn{background:var(--amber-light);border-color:var(--amber);}
+  .alert-info{background:var(--blue-light);border-color:var(--blue-mid);}
+  .alert-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+  .alert-ok .alert-title{color:var(--teal);} .alert-warn .alert-title{color:var(--amber);} .alert-info .alert-title{color:var(--blue-mid);}
+  .alert p{font-size:13px;line-height:1.6;color:var(--ink2);}
+
+  /* TABLES */
+  .data-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .data-table th{text-align:left;color:var(--ink3);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.07em;padding:7px 10px;border-bottom:1px solid var(--line);}
+  .data-table td{padding:9px 10px;border-bottom:1px solid var(--line);color:var(--ink2);}
+  .data-table tr:last-child td{border-bottom:none;}
+  .data-table tr:hover td{background:var(--bg);}
+  .badge{display:inline-block;font-size:11px;font-weight:500;padding:2px 9px;border-radius:999px;}
+  .badge-ok{background:var(--teal-light);color:var(--teal);}
+  .badge-warn{background:var(--amber-light);color:var(--amber);}
+  .badge-blue{background:var(--blue-light);color:var(--blue-mid);}
+
+  /* TIKTOK */
+  .tiktok-banner{background:var(--ink);border-radius:var(--radius);padding:1.75rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.25rem;}
+  .tiktok-icon{font-size:2.5rem;background:linear-gradient(135deg,#ee1d52,#69c9d0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex-shrink:0;}
+  .tiktok-text h3{font-family:'DM Serif Display',serif;font-size:1.4rem;color:white;font-weight:400;}
+  .tiktok-text p{font-size:13px;color:rgba(255,255,255,.5);margin-top:3px;}
+  .tiktok-stats{display:flex;gap:1.5rem;flex-wrap:wrap;margin-left:auto;}
+  .tiktok-stat .v{font-size:1.5rem;font-weight:600;color:white;}
+  .tiktok-stat .l{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;}
+
+  /* NAV */
+  .nav-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--line);}
+  .nav-pill{background:var(--white);border:1px solid var(--line);color:var(--ink2);padding:7px 16px;border-radius:999px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:border-color .2s,color .2s,background .2s;}
+  .nav-pill:hover{border-color:var(--blue-mid);color:var(--blue-mid);background:var(--blue-light);}
+  .nav-pill.active{background:var(--blue-mid);color:white;border-color:var(--blue-mid);}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;font-size:12px;color:var(--ink3);}
+  .legend span{display:flex;align-items:center;gap:5px;}
+  .ld{width:10px;height:10px;border-radius:2px;}
+
+  /* INVOICE */
+  .invoice{background:var(--ink);border-radius:var(--radius);padding:1.75rem;color:white;}
+  .invoice-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.08);}
+  .invoice-row:last-child{border-bottom:none;}
+  .invoice-row.total{font-size:16px;font-weight:600;padding-top:14px;margin-top:4px;border-top:1px solid rgba(255,255,255,.2);border-bottom:none;}
+  .invoice-row .label{color:rgba(255,255,255,.6);}
+  .invoice-row .amount{color:white;font-weight:500;}
+  .invoice-row.total .amount{color:#6ab0f5;font-size:1.4rem;}
+
+  /* ===== PHOTO SLOTS ===== */
+  .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-top:.75rem;}
+  .photo-slot{aspect-ratio:4/5;border:2px dashed var(--line);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--ink3);font-size:12px;text-align:center;padding:1rem;background:var(--white);cursor:pointer;position:relative;overflow:hidden;transition:border-color .2s,background .2s;}
+  .photo-slot:hover{border-color:var(--blue-mid);background:var(--blue-light);}
+  .photo-slot.drag-over{border-color:var(--blue-mid);background:var(--blue-light);border-style:solid;}
+  .photo-slot .slot-icon{font-size:28px;pointer-events:none;}
+  .photo-slot .slot-label{pointer-events:none;font-size:11px;color:var(--ink3);}
+  .photo-slot img.slot-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:8px;}
+  .photo-slot .slot-remove{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:13px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:2;}
+  .photo-slot:hover .slot-remove{display:flex;}
+  .photo-slot input[type=file]{display:none;}
+  .slot-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;}
+
+  /* ===== SCREENSHOT DROP ZONE ===== */
+  .screenshot-zone{border:2px dashed var(--line);border-radius:10px;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;background:var(--white);transition:border-color .2s,background .2s;padding:1rem;position:relative;overflow:hidden;margin-top:.75rem;}
+  .screenshot-zone:hover{border-color:var(--blue-mid);background:var(--blue-light);}
+  .screenshot-zone.drag-over{border-color:var(--blue-mid);background:var(--blue-light);border-style:solid;}
+  .screenshot-zone .sz-label{font-size:12px;color:var(--ink3);pointer-events:none;}
+  .screenshot-zone img{max-width:100%;border-radius:8px;display:block;}
+  .screenshot-zone .slot-remove{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:white;border:none;border-radius:50%;width:24px;height:24px;font-size:14px;cursor:pointer;display:none;align-items:center;justify-content:center;}
+  .screenshot-zone:hover .slot-remove{display:flex;}
+  .screenshot-zone input[type=file]{display:none;}
+
+  /* ===== EDITABLE RECS ===== */
+  .rec-item{display:flex;gap:1rem;padding:1.1rem 0;border-bottom:1px solid var(--line);position:relative;align-items:flex-start;}
+  .rec-item:last-child{border-bottom:none;}
+  .rec-num{width:28px;height:28px;border-radius:50%;background:var(--blue-light);color:var(--blue-mid);font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+  .rec-content{flex:1;}
+  .rec-content h4{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;outline:none;border-radius:4px;padding:2px 4px;min-width:40px;}
+  .rec-content h4:focus{background:var(--blue-light);outline:none;}
+  .rec-content p.rec-text{font-size:13px;color:var(--ink2);line-height:1.55;outline:none;border-radius:4px;padding:2px 4px;min-width:40px;}
+  .rec-content p.rec-text:focus{background:var(--blue-light);outline:none;}
+  .rec-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center;}
+  .rec-tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;cursor:pointer;border:1.5px solid transparent;transition:opacity .15s;}
+  .rec-tag:hover{opacity:.75;}
+  .tag-meta{background:#e0e8f7;color:#1a56a0;}
+  .tag-tiktok{background:#ffe8f0;color:#c0145a;}
+  .tag-estrategia{background:#e0f5ef;color:#0f6e56;}
+  .tag-contenido{background:#fdf3e0;color:#a06010;}
+  .tag-tecnico{background:#f0e8ff;color:#5e35b1;}
+  .rec-actions{display:flex;gap:6px;flex-shrink:0;margin-top:2px;}
+  .rec-delete{background:transparent;border:1px solid var(--line);color:var(--ink3);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;transition:border-color .2s,color .2s,background .2s;}
+  .rec-delete:hover{border-color:var(--coral);color:var(--coral);background:var(--coral-light);}
+  .add-tag-btn{font-size:11px;color:var(--blue-mid);cursor:pointer;background:var(--blue-light);border:none;border-radius:4px;padding:2px 8px;font-family:'DM Sans',sans-serif;font-weight:600;}
+  .add-tag-btn:hover{background:#d0e4f8;}
+  .add-rec-btn{display:flex;align-items:center;gap:8px;background:transparent;border:1.5px dashed var(--line);color:var(--blue-mid);padding:.85rem 1.25rem;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;width:100%;justify-content:center;margin-top:.75rem;transition:border-color .2s,background .2s;}
+  .add-rec-btn:hover{border-color:var(--blue-mid);background:var(--blue-light);}
+  .edit-hint{font-size:11px;color:var(--ink3);margin-bottom:.75rem;display:flex;align-items:center;gap:5px;}
+
+  /* TAG PICKER */
+  .tag-picker{position:absolute;background:white;border:1px solid var(--line);border-radius:10px;padding:.75rem;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:100;display:flex;flex-direction:column;gap:6px;min-width:180px;}
+  .tag-picker-item{padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:opacity .15s;}
+  .tag-picker-item:hover{opacity:.8;}
+
+  /* COMPARE */
+  .compare-col{text-align:center;}
+  .compare-win{font-weight:600;color:var(--teal);}
+  .compare-lose{color:var(--ink3);}
+
+  @media(max-width:600px){
+    .page-header{flex-direction:column;align-items:flex-start;gap:10px;}
+    .tiktok-banner{flex-direction:column;}
+    .tiktok-stats{margin-left:0;}
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="page active" id="page-cover">
+  <div class="cover">
+    <div class="cover-logo"><span>Vacunorte</span> · Informe de Redes y Campañas</div>
+    <h1>Resultados de <em>Campañas ADS</em><br>y Presencia Digital</h1>
+    <p class="cover-sub">Período: 14 de abril — 19 de mayo 2026 · Meta Ads + TikTok Orgánico</p>
+    <div class="cover-pills">
+      <div class="pill">📢 3 campañas Meta Ads</div>
+      <div class="pill">📍 6 ciudades del Ecuador</div>
+      <div class="pill">🎵 TikTok viral orgánico</div>
+      <div class="pill">💰 $90.57 + IVA</div>
+    </div>
+    <button class="btn-start" onclick="goTo('page-overview')">Ver informe completo →</button>
+    <div class="cover-prepared">Preparado por Sarahí Curay · Community Manager &amp; Ads Manager</div>
+  </div>
+</div>
+
+<!-- OVERVIEW -->
+<div class="page" id="page-overview">
+  <div class="page-inner">
+    <div class="page-header">
+      <h2>Resumen General</h2>
+      <button class="btn-back" onclick="goTo('page-cover')">← Portada</button>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric blue"><div class="metric-label">Impresiones totales</div><div class="metric-value">106,723</div><div class="metric-sub">Meta Ads</div></div>
+      <div class="metric blue"><div class="metric-label">Personas alcanzadas</div><div class="metric-value">72,489</div><div class="metric-sub">alcance único</div></div>
+      <div class="metric teal"><div class="metric-label">Resultados totales</div><div class="metric-value">1,818</div><div class="metric-sub">clics, visitas, convs.</div></div>
+      <div class="metric amber"><div class="metric-label">Invertido (sin IVA)</div><div class="metric-value">$90.57</div><div class="metric-sub">USD</div></div>
+      <div class="metric teal"><div class="metric-label">Total con IVA 15%</div><div class="metric-value">$104.16</div><div class="metric-sub">pago real</div></div>
+      <div class="metric blue"><div class="metric-label">Costo prom. resultado</div><div class="metric-value">$0.05</div><div class="metric-sub">USD</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Campañas — haz clic para ver detalle</div>
+      <div class="camp-row" onclick="goTo('page-aspirantes')">
+        <div class="camp-dot" style="background:#3575c7"></div>
+        <div class="camp-name">Emergencia Aspirantes Policía / FF.AA. — Copia</div>
+        <div class="camp-meta">1,605 clics · 6 ciudades</div>
+        <div class="camp-bar-wrap"><div class="camp-bar" style="background:#3575c7;width:100%"></div></div>
+        <div style="font-size:13px;font-weight:600;color:#3575c7;min-width:48px;text-align:right">$31.62</div>
+        <div style="font-size:16px;color:var(--ink3)">›</div>
+      </div>
+      <div class="camp-row" onclick="goTo('page-reel')">
+        <div class="camp-dot" style="background:#d94f2b"></div>
+        <div class="camp-name">Reel Policías y Militares — Conversaciones WA</div>
+        <div class="camp-meta">33 conversaciones · Quito Matriz</div>
+        <div class="camp-bar-wrap"><div class="camp-bar" style="background:#d94f2b;width:85%"></div></div>
+        <div style="font-size:13px;font-weight:600;color:#d94f2b;min-width:48px;text-align:right">$38.43</div>
+        <div style="font-size:16px;color:var(--ink3)">›</div>
+      </div>
+      <div class="camp-row" onclick="goTo('page-trafico')">
+        <div class="camp-dot" style="background:#0f8c6e"></div>
+        <div class="camp-name">Tráfico Vacunas Internado — Quito / Riobamba</div>
+        <div class="camp-meta">180 visitas landing · botón WhatsApp</div>
+        <div class="camp-bar-wrap"><div class="camp-bar" style="background:#0f8c6e;width:53%"></div></div>
+        <div style="font-size:13px;font-weight:600;color:#0f8c6e;min-width:48px;text-align:right">$20.52</div>
+        <div style="font-size:16px;color:var(--ink3)">›</div>
+      </div>
+    </div>
+
+    <!-- SCREENSHOT ZONE under campaigns -->
+    <p class="section-label">Evidencia — datos de campañas</p>
+    <div class="screenshot-zone" id="sz-overview" onclick="document.getElementById('sz-overview-input').click()" ondragover="szDragOver(event,'sz-overview')" ondragleave="szDragLeave(event,'sz-overview')" ondrop="szDrop(event,'sz-overview')">
+      <input type="file" id="sz-overview-input" accept="image/*" onchange="szLoad(event,'sz-overview')">
+      <button class="slot-remove" onclick="szRemove(event,'sz-overview')">×</button>
+      <div id="sz-overview-placeholder" style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <span style="font-size:28px">📸</span>
+        <span class="sz-label">Haz clic o arrastra una captura de pantalla aquí para corroborar la información</span>
+      </div>
+    </div>
+
+    <!-- FACEBOOK FOLLOWERS -->
+    <p class="section-label">Crecimiento orgánico — Facebook</p>
+    <div style="background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.25rem 1.5rem;margin-bottom:1.25rem;display:flex;align-items:center;flex-wrap:wrap;gap:1.25rem;">
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+        <div style="width:38px;height:38px;border-radius:50%;background:#1877f2;display:flex;align-items:center;justify-content:center;">
+          <span style="color:white;font-size:20px;font-weight:700;line-height:1">f</span>
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--ink3)">Facebook · 23 abr – 20 may</div>
+          <div style="font-size:13px;font-weight:500;color:var(--ink)">Vacunorte · Panel Profesional</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
+        <div><div style="font-size:11px;color:var(--ink3);margin-bottom:2px">Total seguidores</div><div style="font-size:1.5rem;font-weight:600;color:var(--ink)">2,348</div></div>
+        <div><div style="font-size:11px;color:var(--ink3);margin-bottom:2px">Seguidores netos</div><div style="font-size:1.5rem;font-weight:600;color:var(--teal)">+9</div></div>
+        <div><div style="font-size:11px;color:var(--ink3);margin-bottom:2px">Crecimiento</div><div style="font-size:1.5rem;font-weight:600;color:var(--teal)">+0.4%</div></div>
+        <div><div style="font-size:11px;color:var(--ink3);margin-bottom:2px">Dejan de seguir</div><div style="font-size:1.5rem;font-weight:600;color:var(--ink)">2</div></div>
+      </div>
+      <a href="https://www.facebook.com/professional_dashboard/profile_insights/views/" target="_blank" rel="noopener" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:#1877f2;color:white;text-decoration:none;padding:8px 16px;border-radius:999px;font-size:12px;font-weight:500;flex-shrink:0;transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Ver en Meta ↗</a>
+    </div>
+
+    <!-- TIKTOK TEASER -->
+    <div class="tiktok-banner" onclick="goTo('page-tiktok')" style="cursor:pointer;margin-top:1.25rem">
+      <div class="tiktok-icon">♪</div>
+      <div class="tiktok-text">
+        <h3>TikTok Orgánico — Video Viral</h3>
+        <p>Mismo reel, $0 invertidos — haz clic para ver el análisis</p>
+      </div>
+      <div class="tiktok-stats">
+        <div class="tiktok-stat"><div class="v">32K</div><div class="l">Visualizaciones</div></div>
+        <div class="tiktok-stat"><div class="v">103</div><div class="l">Nuevos seguidores</div></div>
+        <div class="tiktok-stat"><div class="v">929</div><div class="l">Me gusta</div></div>
+      </div>
+      <div style="color:rgba(255,255,255,.4);font-size:20px;margin-left:1rem">›</div>
+    </div>
+
+    <p class="section-label">Resumen de inversión</p>
+    <div class="invoice">
+      <div class="invoice-row"><span class="label">Emergencia Aspirantes Copia</span><span class="amount">$31.62</span></div>
+      <div class="invoice-row"><span class="label">Reel Policías y Militares</span><span class="amount">$38.43</span></div>
+      <div class="invoice-row"><span class="label">Tráfico Vacunas Internado</span><span class="amount">$20.52</span></div>
+      <div class="invoice-row"><span class="label">Subtotal</span><span class="amount">$90.57</span></div>
+      <div class="invoice-row"><span class="label">IVA 15% (Ecuador)</span><span class="amount">$13.59</span></div>
+      <div class="invoice-row total"><span class="label">Total pagado</span><span class="amount">$104.16</span></div>
+    </div>
+
+    <div class="nav-pills">
+      <button class="nav-pill" onclick="goTo('page-aspirantes')">Aspirantes Copia</button>
+      <button class="nav-pill" onclick="goTo('page-reel')">Reel Policías</button>
+      <button class="nav-pill" onclick="goTo('page-trafico')">Tráfico Vacunas</button>
+      <button class="nav-pill" onclick="goTo('page-tiktok')">TikTok</button>
+      <button class="nav-pill" onclick="goTo('page-posteos')">Posteos del Mes</button>
+      <button class="nav-pill" onclick="goTo('page-recs')">Recomendaciones</button>
+    </div>
+  </div>
+</div>
+
+<!-- ASPIRANTES -->
+<div class="page" id="page-aspirantes">
+  <div class="page-inner">
+    <div class="page-header">
+      <h2>Aspirantes Policía / FF.AA.</h2>
+      <button class="btn-back" onclick="goTo('page-overview')">← Resumen general</button>
+    </div>
+    <div class="alert alert-info"><div class="alert-title">🎯 Objetivo de campaña</div><p>Clics al enlace dirigidos a aspirantes de Policía Nacional y Fuerzas Armadas en 6 sucursales del Ecuador, comunicando la obligatoriedad del esquema de vacunación para el ingreso.</p></div>
+    <div class="metrics-grid">
+      <div class="metric blue"><div class="metric-label">Clics en el enlace</div><div class="metric-value">1,605</div></div>
+      <div class="metric blue"><div class="metric-label">Impresiones</div><div class="metric-value">56,615</div></div>
+      <div class="metric blue"><div class="metric-label">Alcance</div><div class="metric-value">42,393</div></div>
+      <div class="metric teal"><div class="metric-label">Costo por clic</div><div class="metric-value">$0.02</div><div class="metric-sub">excelente</div></div>
+      <div class="metric amber"><div class="metric-label">Total gastado</div><div class="metric-value">$31.62</div></div>
+      <div class="metric amber"><div class="metric-label">Período</div><div class="metric-value" style="font-size:1rem;padding-top:4px">21–25 abr</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Rendimiento por ciudad</div>
+      <div class="legend">
+        <span><span class="ld" style="background:#3575c7"></span>Quito Sur</span>
+        <span><span class="ld" style="background:#0f8c6e"></span>Quito Norte</span>
+        <span><span class="ld" style="background:#d94f2b"></span>Sto. Domingo</span>
+        <span><span class="ld" style="background:#c47a12"></span>Ambato</span>
+        <span><span class="ld" style="background:#6b7c8d"></span>Riobamba</span>
+        <span><span class="ld" style="background:#7b5ea7"></span>Ibarra</span>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="c-ciudades" role="img" aria-label="Clics por ciudad">Sur 728, Norte 309, Sto.Domingo 269, Ambato 112, Riobamba 106, Ibarra 81.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Detalle por sucursal</div>
+      <table class="data-table">
+        <thead><tr><th>Ciudad</th><th style="text-align:right">Clics</th><th style="text-align:right">Gastado</th><th style="text-align:right">Por clic</th><th>Audiencia ppal.</th></tr></thead>
+        <tbody>
+          <tr><td>Quito Sur</td><td style="text-align:right">728</td><td style="text-align:right">$15.01</td><td style="text-align:right">$0.02</td><td><span class="badge badge-warn">55–65+</span></td></tr>
+          <tr><td>Quito Norte</td><td style="text-align:right">309</td><td style="text-align:right">$5.51</td><td style="text-align:right">$0.02</td><td><span class="badge badge-warn">55–65+</span></td></tr>
+          <tr><td>Santo Domingo</td><td style="text-align:right">269</td><td style="text-align:right">$4.80</td><td style="text-align:right">$0.02</td><td><span class="badge badge-warn">55–65+</span></td></tr>
+          <tr><td>Ambato</td><td style="text-align:right">112</td><td style="text-align:right">$2.70</td><td style="text-align:right">$0.02</td><td><span class="badge badge-ok">Mujeres 57%</span></td></tr>
+          <tr><td>Riobamba</td><td style="text-align:right">106</td><td style="text-align:right">$1.92</td><td style="text-align:right">$0.02</td><td><span class="badge badge-ok">Mujeres 53%</span></td></tr>
+          <tr><td>Ibarra</td><td style="text-align:right">81</td><td style="text-align:right">$1.68</td><td style="text-align:right">$0.02</td><td><span class="badge badge-ok">Mujeres 54%</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert alert-ok"><div class="alert-title">✓ Logros destacados</div><p>Costo por clic de $0.02 es excepcionalmente bajo para el sector salud (promedio industria: $0.30–$0.80). Se llegó a 42,393 personas únicas en 6 ciudades con una inversión de solo $31.62.</p></div>
+    <div class="alert alert-warn"><div class="alert-title">⚠ Punto de mejora — audiencia</div><p>El algoritmo Advantage+ de Meta optimizó hacia adultos de 55–65+ en lugar del target real de aspirantes de 18–35 años. Para la próxima campaña se recomienda excluir explícitamente el rango 45+ y concentrar el presupuesto en 2–3 ciudades principales.</p></div>
+    <p class="section-label">Arte de la campaña</p>
+    <div class="photo-grid" id="grid-aspirantes"></div>
+    <div class="nav-pills">
+      <button class="nav-pill active">Aspirantes</button>
+      <button class="nav-pill" onclick="goTo('page-reel')">Reel Policías</button>
+      <button class="nav-pill" onclick="goTo('page-trafico')">Tráfico Vacunas</button>
+      <button class="nav-pill" onclick="goTo('page-tiktok')">TikTok</button>
+      <button class="nav-pill" onclick="goTo('page-posteos')">Posteos</button>
+      <button class="nav-pill" onclick="goTo('page-recs')">Recomendaciones</button>
+    </div>
+  </div>
+</div>
+
+<!-- REEL -->
+<div class="page" id="page-reel">
+  <div class="page-inner">
+    <div class="page-header">
+      <h2>Reel Policías y Militares</h2>
+      <button class="btn-back" onclick="goTo('page-overview')">← Resumen general</button>
+    </div>
+    <div class="alert alert-info"><div class="alert-title">🎯 Objetivo de campaña</div><p>Generar conversaciones directas por WhatsApp con la sucursal Matriz de Quito. Mismo video que generó viralidad orgánica en TikTok.</p></div>
+    <div class="metrics-grid">
+      <div class="metric teal"><div class="metric-label">Conversaciones WA</div><div class="metric-value">33</div></div>
+      <div class="metric blue"><div class="metric-label">Reproducciones</div><div class="metric-value">22,437</div></div>
+      <div class="metric blue"><div class="metric-label">Impresiones</div><div class="metric-value">24,540</div></div>
+      <div class="metric amber"><div class="metric-label">Por conversación</div><div class="metric-value">$1.16</div></div>
+      <div class="metric amber"><div class="metric-label">Total gastado</div><div class="metric-value">$38.43</div></div>
+      <div class="metric blue"><div class="metric-label">Período</div><div class="metric-value" style="font-size:1rem;padding-top:4px">May 14–19</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Métricas del video · Retención por audiencia</div>
+      <div class="metrics-grid">
+        <div class="metric"><div class="metric-label">Captura inicial</div><div class="metric-value">23%</div><div class="metric-sub">primeros 3 seg.</div></div>
+        <div class="metric"><div class="metric-label">Retención Meta</div><div class="metric-value">9.4%</div><div class="metric-sub">de 45 segundos</div></div>
+        <div class="metric"><div class="metric-label">Tiempo prom.</div><div class="metric-value">0:04</div></div>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="c-reel-demo" role="img" aria-label="Demografía reel">Distribución por edad.</canvas></div>
+      <div style="margin-top:.75rem;font-size:13px;color:var(--ink2)"><strong>Mujeres 61%</strong> (20 · $0.87/conv.) — <strong>Hombres 39%</strong> (13 · $1.60/conv.) — Rango dominante: 25–44 ✓</div>
+    </div>
+    <div class="alert alert-ok"><div class="alert-title">✓ Evaluación</div><p>33 conversaciones de WhatsApp a $1.16 cada una es costo aceptable. La demografía que respondió (25–44 años) corresponde al target correcto, a diferencia de otras campañas.</p></div>
+    <p class="section-label">Arte de la campaña</p>
+    <div class="photo-grid" id="grid-reel"></div>
+    <div class="nav-pills">
+      <button class="nav-pill" onclick="goTo('page-aspirantes')">Aspirantes</button>
+      <button class="nav-pill active">Reel Policías</button>
+      <button class="nav-pill" onclick="goTo('page-trafico')">Tráfico Vacunas</button>
+      <button class="nav-pill" onclick="goTo('page-tiktok')">TikTok</button>
+      <button class="nav-pill" onclick="goTo('page-posteos')">Posteos</button>
+      <button class="nav-pill" onclick="goTo('page-recs')">Recomendaciones</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRAFICO -->
+<div class="page" id="page-trafico">
+  <div class="page-inner">
+    <div class="page-header">
+      <h2>Tráfico Vacunas Internado</h2>
+      <button class="btn-back" onclick="goTo('page-overview')">← Resumen general</button>
+    </div>
+    <div class="alert alert-info"><div class="alert-title">🎯 Objetivo de campaña</div><p>Llevar tráfico a la landing page de vacunas para internado médico en Quito y Riobamba, donde el usuario hace clic en el botón de WhatsApp para agendar.</p></div>
+    <div class="metrics-grid">
+      <div class="metric teal"><div class="metric-label">Visitas landing</div><div class="metric-value">180</div></div>
+      <div class="metric blue"><div class="metric-label">Impresiones</div><div class="metric-value">25,568</div></div>
+      <div class="metric blue"><div class="metric-label">Alcance</div><div class="metric-value">14,940</div></div>
+      <div class="metric amber"><div class="metric-label">Por visita</div><div class="metric-value">$0.11</div></div>
+      <div class="metric amber"><div class="metric-label">Total gastado</div><div class="metric-value">$20.52</div></div>
+      <div class="metric blue"><div class="metric-label">Estado</div><div class="metric-value" style="font-size:.9rem;padding-top:6px">Activo</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Proyección de conversiones estimadas</div>
+      <table class="data-table">
+        <thead><tr><th>Etapa del funnel</th><th style="text-align:right">Estimado</th><th>Base</th></tr></thead>
+        <tbody>
+          <tr><td>Visitas a la landing</td><td style="text-align:right">180</td><td>Dato real</td></tr>
+          <tr><td>Clic en botón WhatsApp (10–20%)</td><td style="text-align:right">18 – 36</td><td>Tasa industria salud</td></tr>
+          <tr><td>Pacientes que agendaron (20–40%)</td><td style="text-align:right"><strong>4 – 14</strong></td><td>Tasa de cierre</td></tr>
+          <tr><td>Costo por paciente captado</td><td style="text-align:right">$1.46 – $5.13</td><td>Muy bajo para clínica</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert alert-ok"><div class="alert-title">✓ Audiencia correcta en Quito Norte</div><p>La segmentación de Quito Norte registró demografía de 18–24 y 25–34 años, coincidiendo perfectamente con el perfil de estudiante en proceso de internado. Esta segmentación puede replicarse.</p></div>
+    <p class="section-label">Arte de la campaña</p>
+    <div class="photo-grid" id="grid-trafico"></div>
+    <div class="nav-pills">
+      <button class="nav-pill" onclick="goTo('page-aspirantes')">Aspirantes</button>
+      <button class="nav-pill" onclick="goTo('page-reel')">Reel Policías</button>
+      <button class="nav-pill active">Tráfico Vacunas</button>
+      <button class="nav-pill" onclick="goTo('page-tiktok')">TikTok</button>
+      <button class="nav-pill" onclick="goTo('page-posteos')">Posteos</button>
+      <button class="nav-pill" onclick="goTo('page-recs')">Recomendaciones</button>
+    </div>
+  </div>
+</div>
+
+<!-- TIKTOK -->
+<div class="page" id="page-tiktok">
+  <div class="page-inner">
+    <div class="page-header">
+      <h2>TikTok Orgánico</h2>
+      <button class="btn-back" onclick="goTo('page-overview')">← Resumen general</button>
+    </div>
+    <div class="tiktok-banner">
+      <div class="tiktok-icon">♪</div>
+      <div class="tiktok-text"><h3>Reel viral — $0 invertidos</h3><p>El mismo reel pautado en Meta creció orgánicamente en TikTok</p></div>
+      <div class="tiktok-stats">
+        <div class="tiktok-stat"><div class="v">32K</div><div class="l">Vistas · +6,020%</div></div>
+        <div class="tiktok-stat"><div class="v">103</div><div class="l">Seguidores · +48%</div></div>
+        <div class="tiktok-stat"><div class="v">929</div><div class="l">Likes · +5,706%</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Comparativa: mismo video, plataformas distintas</div>
+      <table class="data-table">
+        <thead><tr><th>Métrica</th><th class="compare-col">Meta (pagado · $38.43)</th><th class="compare-col">TikTok (orgánico · $0)</th></tr></thead>
+        <tbody>
+          <tr><td>Reproducciones</td><td class="compare-col compare-lose">22,437</td><td class="compare-col compare-win">32,000+</td></tr>
+          <tr><td>Costo</td><td class="compare-col compare-lose">$38.43</td><td class="compare-col compare-win">$0.00</td></tr>
+          <tr><td>Nuevos seguidores</td><td class="compare-col compare-lose">—</td><td class="compare-col compare-win">103</td></tr>
+          <tr><td>Engagement</td><td class="compare-col compare-lose">66 likes</td><td class="compare-col compare-win">929 likes · 6 shares</td></tr>
+          <tr><td>Conversiones WA</td><td class="compare-col compare-win">33 conversaciones</td><td class="compare-col compare-lose">No trazable</td></tr>
+          <tr><td>Retención</td><td class="compare-col compare-lose">9.4%</td><td class="compare-col compare-win">Mucho más alta</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert alert-ok"><div class="alert-title">✓ Conclusión estratégica</div><p>El contenido de Vacunorte tiene potencial viral real en TikTok. Las 32K vistas y 103 nuevos seguidores son resultados que en Meta habrían costado significativamente más.</p></div>
+    <div class="alert alert-info"><div class="alert-title">💡 Meta vs TikTok — para qué sirve cada uno</div><p><strong>Meta:</strong> conversión directa, audiencias específicas por ciudad, resultados medibles.<br><strong>TikTok:</strong> construcción de comunidad, posicionamiento de marca, alcance masivo orgánico. Se complementan.</p></div>
+    <p class="section-label">Capturas de TikTok</p>
+    <div class="photo-grid" id="grid-tiktok"></div>
+    <div class="nav-pills">
+      <button class="nav-pill" onclick="goTo('page-aspirantes')">Aspirantes</button>
+      <button class="nav-pill" onclick="goTo('page-reel')">Reel Policías</button>
+      <button class="nav-pill" onclick="goTo('page-trafico')">Tráfico Vacunas</button>
+      <button class="nav-pill active">TikTok</button>
+      <button class="nav-pill" onclick="goTo('page-posteos')">Posteos</button>
+      <button class="nav-pill" onclick="goTo('page-recs')">Recomendaciones</button>
+    </div>
+  </div>
+</div>
+
+<!-- POSTEOS -->
+<div class="page" id="page-posteos">
+  <div class="page-inner">
+    <div class="page-header">
+      <h2>Posteos y Artes del Mes</h2>
+      <button class="btn-back" onclick="goTo('page-overview')">← Resumen general</button>
+    </div>
+    <p class="section-label">Facebook / Instagram — posts pautados</p>
+    <div class="photo-grid" id="grid-posteos-pautados"></div>
+    <p class="section-label" style="margin-top:1.5rem">Facebook / Instagram — posts orgánicos</p>
+    <div class="photo-grid" id="grid-posteos-organicos"></div>
+    <p class="section-label" style="margin-top:1.5rem">TikTok — videos publicados</p>
+    <div class="photo-grid" id="grid-posteos-tiktok"></div>
+    <div class="nav-pills">
+      <button class="nav-pill" onclick="goTo('page-aspirantes')">Aspirantes</button>
+      <button class="nav-pill" onclick="goTo('page-reel')">Reel Policías</button>
+      <button class="nav-pill" onclick="goTo('page-trafico')">Tráfico Vacunas</button>
+      <button class="nav-pill" onclick="goTo('page-tiktok')">TikTok</button>
+      <button class="nav-pill active">Posteos</button>
+      <button class="nav-pill" onclick="goTo('page-recs')">Recomendaciones</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECOMENDACIONES -->
+<div class="page" id="page-recs">
+  <div class="page-inner">
+    <div class="page-header">
+      <h2>Recomendaciones Junio 2026</h2>
+      <button class="btn-back" onclick="goTo('page-overview')">← Resumen general</button>
+    </div>
+    <p class="edit-hint">✏️ Haz clic en cualquier texto para editarlo · Usa los botones para agregar etiquetas o eliminar recomendaciones</p>
+    <div class="card" id="recs-container"></div>
+    <div class="nav-pills">
+      <button class="nav-pill" onclick="goTo('page-aspirantes')">Aspirantes</button>
+      <button class="nav-pill" onclick="goTo('page-reel')">Reel Policías</button>
+      <button class="nav-pill" onclick="goTo('page-trafico')">Tráfico Vacunas</button>
+      <button class="nav-pill" onclick="goTo('page-tiktok')">TikTok</button>
+      <button class="nav-pill" onclick="goTo('page-posteos')">Posteos</button>
+      <button class="nav-pill active">Recomendaciones</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAG PICKER POPUP -->
+<div id="tag-picker" class="tag-picker" style="display:none">
+  <div class="tag-picker-item tag-meta" onclick="addTag('Meta Ads','tag-meta')">Meta Ads</div>
+  <div class="tag-picker-item tag-tiktok" onclick="addTag('TikTok','tag-tiktok')">TikTok</div>
+  <div class="tag-picker-item tag-estrategia" onclick="addTag('Estrategia','tag-estrategia')">Estrategia</div>
+  <div class="tag-picker-item tag-contenido" onclick="addTag('Contenido','tag-contenido')">Contenido</div>
+  <div class="tag-picker-item tag-tecnico" onclick="addTag('Técnico','tag-tecnico')">Técnico</div>
+</div>
+
+<script>
+// ===== NAVIGATION =====
+function goTo(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const t=document.getElementById(id);
+  if(t){t.classList.add('active');window.scrollTo(0,0);}
+}
+
+// ===== PHOTO SLOTS =====
+const grids={
+  'grid-aspirantes':3,'grid-reel':2,'grid-trafico':2,'grid-tiktok':3,
+  'grid-posteos-pautados':4,'grid-posteos-organicos':6,'grid-posteos-tiktok':4
+};
+function makeSlot(gridId,idx){
+  const slot=document.createElement('div');
+  slot.className='photo-slot';
+  slot.id=`slot-${gridId}-${idx}`;
+  slot.innerHTML=`
+    <input type="file" accept="image/*" id="inp-${gridId}-${idx}">
+    <button class="slot-remove" onclick="removeSlotImg(event,'${gridId}',${idx})">×</button>
+    <div class="slot-placeholder">
+      <span class="slot-icon">🖼</span>
+      <span class="slot-label">Haz clic o arrastra una imagen</span>
+    </div>`;
+  slot.addEventListener('click',e=>{
+    if(e.target.classList.contains('slot-remove'))return;
+    document.getElementById(`inp-${gridId}-${idx}`).click();
+  });
+  slot.addEventListener('dragover',e=>{e.preventDefault();slot.classList.add('drag-over');});
+  slot.addEventListener('dragleave',()=>slot.classList.remove('drag-over'));
+  slot.addEventListener('drop',e=>{
+    e.preventDefault();slot.classList.remove('drag-over');
+    const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))loadImg(f,gridId,idx);
+  });
+  const inp=slot.querySelector('input[type=file]');
+  inp.addEventListener('change',e=>{
+    const f=e.target.files[0];if(f)loadImg(f,gridId,idx);
+  });
+  return slot;
+}
+function loadImg(file,gridId,idx){
+  const r=new FileReader();
+  r.onload=ev=>{
+    const slot=document.getElementById(`slot-${gridId}-${idx}`);
+    const ph=slot.querySelector('.slot-placeholder');
+    if(ph)ph.style.display='none';
+    let img=slot.querySelector('img.slot-img');
+    if(!img){img=document.createElement('img');img.className='slot-img';slot.insertBefore(img,slot.firstChild);}
+    img.src=ev.target.result;
+  };
+  r.readAsDataURL(file);
+}
+function removeSlotImg(e,gridId,idx){
+  e.stopPropagation();
+  const slot=document.getElementById(`slot-${gridId}-${idx}`);
+  const img=slot.querySelector('img.slot-img');if(img)img.remove();
+  const ph=slot.querySelector('.slot-placeholder');if(ph)ph.style.display='flex';
+  const inp=document.getElementById(`inp-${gridId}-${idx}`);if(inp)inp.value='';
+}
+function addSlotBtn(gridId){
+  const g=document.getElementById(gridId);
+  const btn=document.createElement('div');
+  btn.className='photo-slot';
+  btn.style.cursor='pointer';
+  btn.innerHTML='<div class="slot-placeholder"><span class="slot-icon" style="font-size:22px">＋</span><span class="slot-label">Agregar imagen</span></div>';
+  btn.addEventListener('click',()=>{
+    const idx=g.querySelectorAll('.photo-slot').length-1;
+    // replace this btn with a real slot then add new btn
+    const newSlot=makeSlot(gridId,idx);
+    g.insertBefore(newSlot,btn);
+    addSlotBtn(gridId); // add btn again
+    g.removeChild(btn);
+    document.getElementById(`inp-${gridId}-${idx}`).click();
+  });
+  g.appendChild(btn);
+}
+function initGrids(){
+  Object.entries(grids).forEach(([gid,count])=>{
+    const g=document.getElementById(gid);if(!g)return;
+    for(let i=0;i<count;i++)g.appendChild(makeSlot(gid,i));
+    addSlotBtn(gid);
+  });
+}
+
+// ===== SCREENSHOT ZONES =====
+function szDragOver(e,id){e.preventDefault();document.getElementById(id).classList.add('drag-over');}
+function szDragLeave(e,id){document.getElementById(id).classList.remove('drag-over');}
+function szDrop(e,id){
+  e.preventDefault();document.getElementById(id).classList.remove('drag-over');
+  const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))szLoadFile(f,id);
+}
+function szLoad(e,id){const f=e.target.files[0];if(f)szLoadFile(f,id);}
+function szLoadFile(file,id){
+  const r=new FileReader();
+  r.onload=ev=>{
+    const zone=document.getElementById(id);
+    const ph=document.getElementById(id+'-placeholder');if(ph)ph.style.display='none';
+    let img=zone.querySelector('img');
+    if(!img){img=document.createElement('img');zone.insertBefore(img,zone.firstChild);}
+    img.src=ev.target.result;img.style.maxWidth='100%';img.style.borderRadius='8px';img.style.display='block';
+    zone.style.cursor='default';
+    const rmv=zone.querySelector('.slot-remove');if(rmv)rmv.style.display='flex';
+  };
+  r.readAsDataURL(file);
+}
+function szRemove(e,id){
+  e.stopPropagation();
+  const zone=document.getElementById(id);
+  const img=zone.querySelector('img');if(img)img.remove();
+  const ph=document.getElementById(id+'-placeholder');if(ph)ph.style.display='flex';
+  zone.style.cursor='pointer';
+  const inp=document.getElementById(id+'-input');if(inp)inp.value='';
+}
+
+// ===== RECOMMENDATIONS =====
+const TAGS_DEF=[
+  {label:'Meta Ads',cls:'tag-meta'},{label:'TikTok',cls:'tag-tiktok'},
+  {label:'Estrategia',cls:'tag-estrategia'},{label:'Contenido',cls:'tag-contenido'},
+  {label:'Técnico',cls:'tag-tecnico'}
+];
+const recsData=[
+  {title:'Corregir segmentación por edad en Aspirantes',text:'Excluir explícitamente el rango 45+ en todos los conjuntos de anuncios. Usar intereses: "Policía Nacional Ecuador", "Fuerzas Armadas". Desactivar Advantage+ audience expansion.',tags:['Meta Ads','Estrategia']},
+  {title:'Consolidar presupuesto — menos ciudades, más impacto',text:'En lugar de 6 conjuntos de $7/día, probar 2–3 ciudades con $15–20/día. Quito Sur y Quito Norte son las de mejor desempeño.',tags:['Meta Ads','Estrategia']},
+  {title:'Activar Pixel de Meta en la landing de internado',text:'Instalar el Pixel en vacunorte.com/landing-internado para rastrear clics en el botón de WhatsApp y crear audiencias de retargeting.',tags:['Meta Ads','Técnico']},
+  {title:'Crear piezas nativas para Meta — no reutilizar reels de TikTok',text:'Para Meta crear piezas de 15 seg. con texto grande desde el inicio y CTA en los primeros 3 segundos. Reservar los reels largos para TikTok orgánico.',tags:['Meta Ads','Contenido']},
+  {title:'Publicar 3–4 reels semanales en TikTok',text:'El canal demostró potencial viral real. Formatos: profesional de salud hablando a cámara, "¿Sabías que necesitas esta vacuna para…?", antes/después del esquema.',tags:['TikTok','Contenido']},
+  {title:'Aprovechar el crecimiento de seguidores en TikTok',text:'Publicar un video de bienvenida explicando servicios de Vacunorte para convertir los 103 nuevos seguidores en pacientes. Incluir siempre CTA: "Link en bio para agendar".',tags:['TikTok','Estrategia']},
+  {title:'Calendario de contenido por temporadas de demanda',text:'Junio–Agosto: temporada alta de aspirantes. Crear contenido anticipado: "checklist de vacunas que necesitas", "cuánto tiempo antes vacunarte", "qué pasa si no cumples el esquema".',tags:['Contenido','Estrategia']},
+  {title:'Crear audiencias de retargeting',text:'Usar los 42,393 usuarios que vieron los anuncios para crear una audiencia con mensaje diferente: "¿Todavía no completaste tu esquema? El tiempo se acaba." El segundo toque tiene conversiones 3–5x más altas.',tags:['Meta Ads','Estrategia']}
+];
+let currentTagTarget=null;
+function renderRecs(){
+  const c=document.getElementById('recs-container');c.innerHTML='';
+  recsData.forEach((rec,i)=>{
+    const div=document.createElement('div');div.className='rec-item';div.setAttribute('data-idx',i);
+    const tagsHtml=rec.tags.map(t=>{
+      const cls=TAGS_DEF.find(d=>d.label===t)?.cls||'tag-meta';
+      return `<span class="rec-tag ${cls}" onclick="removeTag(${i},'${t}')" title="Clic para quitar">${t}</span>`;
+    }).join('');
+    div.innerHTML=`
+      <div class="rec-num">${i+1}</div>
+      <div class="rec-content">
+        <h4 contenteditable="true" spellcheck="false" onblur="saveRec(${i},'title',this.innerText)">${rec.title}</h4>
+        <p class="rec-text" contenteditable="true" spellcheck="false" onblur="saveRec(${i},'text',this.innerText)">${rec.text}</p>
+        <div class="rec-tags">${tagsHtml}<button class="add-tag-btn" onclick="openTagPicker(event,${i})">+ etiqueta</button></div>
+      </div>
+      <div class="rec-actions"><button class="rec-delete" onclick="deleteRec(${i})">✕ Eliminar</button></div>`;
+    c.appendChild(div);
+  });
+  const addBtn=document.createElement('button');
+  addBtn.className='add-rec-btn';addBtn.innerHTML='＋ Agregar recomendación';
+  addBtn.onclick=()=>{recsData.push({title:'Nueva recomendación',text:'Describe la acción recomendada aquí...',tags:[]});renderRecs();};
+  c.appendChild(addBtn);
+}
+function saveRec(i,field,val){recsData[i][field]=val.trim();}
+function deleteRec(i){recsData.splice(i,1);renderRecs();}
+function removeTag(i,tag){recsData[i].tags=recsData[i].tags.filter(t=>t!==tag);renderRecs();}
+function openTagPicker(e,i){
+  e.stopPropagation();
+  currentTagTarget=i;
+  const picker=document.getElementById('tag-picker');
+  const r=e.target.getBoundingClientRect();
+  picker.style.top=(r.bottom+window.scrollY+4)+'px';
+  picker.style.left=r.left+'px';
+  picker.style.display='flex';picker.style.flexDirection='column';
+}
+function addTag(label,cls){
+  if(currentTagTarget===null)return;
+  if(!recsData[currentTagTarget].tags.includes(label))recsData[currentTagTarget].tags.push(label);
+  document.getElementById('tag-picker').style.display='none';
+  renderRecs();
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#tag-picker')&&!e.target.classList.contains('add-tag-btn'))
+    document.getElementById('tag-picker').style.display='none';
+});
+
+// ===== CHARTS =====
+function initCharts(){
+  const opts=(extra={})=>({
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{ticks:{font:{size:11},maxRotation:20,autoSkip:false},grid:{display:false}},y:{ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,.06)'}}},
+    ...extra
+  });
+  const cCiudades=document.getElementById('c-ciudades');
+  if(cCiudades)new Chart(cCiudades,{type:'bar',data:{labels:['Quito Sur','Quito Norte','Sto. Domingo','Ambato','Riobamba','Ibarra'],datasets:[{data:[728,309,269,112,106,81],backgroundColor:['#3575c7','#0f8c6e','#d94f2b','#c47a12','#6b7c8d','#7b5ea7'],borderRadius:5,borderSkipped:false}]},options:opts()});
+  const cRD=document.getElementById('c-reel-demo');
+  if(cRD)new Chart(cRD,{type:'bar',data:{labels:['13–17','18–24','25–34','35–44','45–54','55–64','65+'],datasets:[{label:'Hombres',data:[0,1,5,2,5,0,0],backgroundColor:'#3575c7',borderRadius:3},{label:'Mujeres',data:[0,0,6,6,3,2,0],backgroundColor:'#0f8c6e',borderRadius:3}]},options:{...opts(),plugins:{legend:{display:true,labels:{font:{size:11},boxWidth:12}}}}});
+}
+
+// ===== SUPABASE + LOCALSTORAGE =====
+const SB_URL='https://gsxagzjktdovwucbsjho.supabase.co';
+const SB_KEY='sb_publishable_fgcyi7whz-Fmtt1eHXr8mw_WX1lJbOW';
+const BUCKET='informe-vacunorte';
+const STORE='vacunorte_urls_v1';
+let sbClient=null;
+
+function getSB(){
+  if(!sbClient){
+    const {createClient}=supabase;
+    sbClient=createClient(SB_URL,SB_KEY);
+  }
+  return sbClient;
+}
+
+// Upload file to Supabase Storage, return public URL
+async function uploadToSB(file, path){
+  const sb=getSB();
+  const {error}=await sb.storage.from(BUCKET).upload(path,file,{upsert:true,contentType:file.type});
+  if(error)throw error;
+  const {data}=sb.storage.from(BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// localStorage stores only URLs (tiny)
+const urlStore={};
+function saveURLs(){
+  try{localStorage.setItem(STORE,JSON.stringify(urlStore));}catch(e){}
+}
+function loadURLs(){
+  try{const r=localStorage.getItem(STORE);if(r){
+    Object.assign(urlStore,JSON.parse(r));
+    Object.keys(urlStore).forEach(k => {
+      if(k.startsWith('slot-')){
+        const parts = k.split('-');
+        if(parts.length >= 3){
+          const idx = parseInt(parts.pop());
+          const gridId = parts.join('-');
+          if(grids[gridId] !== undefined && idx >= grids[gridId]){
+            grids[gridId] = idx + 1;
+          }
+        }
+      }
+    });
+  }}catch(e){}
+}
+
+function showToast(msg,color){
+  let t=document.getElementById('sb-toast');
+  if(!t){t=document.createElement('div');t.id='sb-toast';
+    t.style.cssText='position:fixed;bottom:24px;right:24px;color:white;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;';
+    document.body.appendChild(t);}
+  t.style.background=color||'#0f8c6e';
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity='0';},2200);
+}
+
+// Override loadImg — upload to Supabase
+loadImg=async function(file,gridId,idx){
+  const slotId='slot-'+gridId+'-'+idx;
+  const slot=document.getElementById(slotId);
+  const ph=slot.querySelector('.slot-placeholder');
+  // Show preview immediately
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    if(ph)ph.style.display='none';
+    let img=slot.querySelector('img.slot-img');
+    if(!img){img=document.createElement('img');img.className='slot-img';slot.insertBefore(img,slot.firstChild);}
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  // Upload to Supabase
+  showToast('⬆ Subiendo imagen...','#3575c7');
+  try{
+    const path=gridId+'/'+idx+'_'+Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const url=await uploadToSB(file,path);
+    urlStore[slotId]=url;
+    saveURLs();
+    showToast('✓ Imagen guardada en la nube');
+  }catch(e){
+    showToast('⚠ Error al subir: '+e.message,'#d94f2b');
+    console.error(e);
+  }
+};
+
+// Override szLoadFile — upload to Supabase
+szLoadFile=async function(file,id){
+  const zone=document.getElementById(id);
+  const ph=document.getElementById(id+'-placeholder');
+  // Preview immediately
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    if(ph)ph.style.display='none';
+    let img=zone.querySelector('img');
+    if(!img){img=document.createElement('img');zone.insertBefore(img,zone.firstChild);}
+    img.src=ev.target.result;
+    img.style.cssText='max-width:100%;border-radius:8px;display:block;';
+    zone.style.cursor='default';
+    const rmv=zone.querySelector('.slot-remove');if(rmv)rmv.style.display='flex';
+  };
+  reader.readAsDataURL(file);
+  showToast('⬆ Subiendo captura...','#3575c7');
+  try{
+    const path='screenshots/'+id+'_'+Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const url=await uploadToSB(file,path);
+    urlStore[id]=url;
+    saveURLs();
+    showToast('✓ Captura guardada en la nube');
+  }catch(e){
+    showToast('⚠ Error: '+e.message,'#d94f2b');
+  }
+};
+
+// Override remove functions — delete from Supabase
+removeSlotImg=async function(e,gridId,idx){
+  e.stopPropagation();
+  const slotId='slot-'+gridId+'-'+idx;
+  const slot=document.getElementById(slotId);
+  const img=slot.querySelector('img.slot-img');if(img)img.remove();
+  const ph=slot.querySelector('.slot-placeholder');if(ph)ph.style.display='flex';
+  const inp=document.getElementById('inp-'+gridId+'-'+idx);if(inp)inp.value='';
+  if(urlStore[slotId]){
+    try{
+      // Extract path from URL
+      const url=urlStore[slotId];
+      const path=url.split('/object/public/'+BUCKET+'/')[1];
+      if(path)await getSB().storage.from(BUCKET).remove([decodeURIComponent(path)]);
+    }catch(e){}
+    delete urlStore[slotId];saveURLs();
+  }
+};
+
+szRemove=async function(e,id){
+  e.stopPropagation();
+  const zone=document.getElementById(id);
+  const img=zone.querySelector('img');if(img)img.remove();
+  const ph=document.getElementById(id+'-placeholder');if(ph)ph.style.display='flex';
+  zone.style.cursor='pointer';
+  const inp=document.getElementById(id+'-input');if(inp)inp.value='';
+  if(urlStore[id]){
+    try{
+      const url=urlStore[id];
+      const path=url.split('/object/public/'+BUCKET+'/')[1];
+      if(path)await getSB().storage.from(BUCKET).remove([decodeURIComponent(path)]);
+    }catch(e){}
+    delete urlStore[id];saveURLs();
+  }
+};
+
+// Rec persistence via localStorage
+const RECS_KEY='vacunorte_recs_v1';
+function saveRecs(){try{localStorage.setItem(RECS_KEY,JSON.stringify(recsData));}catch(e){}}
+function loadRecs(){
+  try{const r=localStorage.getItem(RECS_KEY);
+    if(r){const d=JSON.parse(r);recsData.length=0;d.forEach(x=>recsData.push(x));}}catch(e){}
+}
+const _sr=saveRec;saveRec=function(i,f,v){_sr(i,f,v);saveRecs();};
+const _dr=deleteRec;deleteRec=function(i){_dr(i);saveRecs();};
+const _rt=removeTag;removeTag=function(i,t){_rt(i,t);saveRecs();};
+const _at=addTag;addTag=function(l,c){_at(l,c);saveRecs();};
+
+// Restore images from stored URLs on load
+function restoreImages(){
+  Object.entries(urlStore).forEach(([id,url])=>{
+    // Check if it's a slot or screenshot zone
+    const slot=document.getElementById(id);
+    if(slot&&slot.classList.contains('photo-slot')){
+      const ph=slot.querySelector('.slot-placeholder');if(ph)ph.style.display='none';
+      let img=slot.querySelector('img.slot-img');
+      if(!img){img=document.createElement('img');img.className='slot-img';slot.insertBefore(img,slot.firstChild);}
+      img.src=url;
+    } else if(slot&&slot.classList.contains('screenshot-zone')){
+      const ph=document.getElementById(id+'-placeholder');if(ph)ph.style.display='none';
+      let img=slot.querySelector('img');
+      if(!img){img=document.createElement('img');slot.insertBefore(img,slot.firstChild);}
+      img.src=url;img.style.cssText='max-width:100%;border-radius:8px;display:block;';
+      slot.style.cursor='default';
+      const rmv=slot.querySelector('.slot-remove');if(rmv)rmv.style.display='flex';
+    }
+  });
+}
+
+function clearStorage(){
+  if(confirm('Esto borrara todas las URLs guardadas localmente. Las imagenes en Supabase se mantienen. Continuar?')){
+    localStorage.removeItem(STORE);
+    localStorage.removeItem(RECS_KEY);
+    location.reload();
+  }
+}
+
+// ===== INIT =====
+window.addEventListener('DOMContentLoaded',()=>{
+  initGrids();
+  loadURLs();
+  loadRecs();
+  restoreImages();
+  renderRecs();
+  initCharts();
+  const np=document.querySelector('#page-recs .nav-pills');
+  if(np){
+    const cb=document.createElement('button');
+    cb.className='nav-pill';
+    cb.style.cssText='color:#d94f2b;border-color:#d94f2b;';
+    cb.innerHTML='🗑 Limpiar caché local';
+    cb.onclick=clearStorage;
+    np.appendChild(cb);
+  }
+});</script>
+</body>
+</html>
